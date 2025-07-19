@@ -17,7 +17,7 @@ public class OrderMapper {
     public static CreateOrderResponseDTO toCreateOrderResponseDTO(OrderEntity orderEntity){
         return CreateOrderResponseDTO.builder()
                 .orderId(orderEntity.getId())
-                .message(OrderStatus.PENDING)
+                .message(orderEntity.getStatus())
                 .build();
     }
 

@@ -2,7 +2,6 @@ package com.example.ecommerceSpringOrderService.controllers;
 
 import com.example.ecommerceSpringOrderService.dtos.CreateOrderResponseDTO;
 import com.example.ecommerceSpringOrderService.dtos.OrderRequestDTO;
-import com.example.ecommerceSpringOrderService.dtos.ProductDTO;
 import com.example.ecommerceSpringOrderService.services.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +18,13 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<CreateOrderResponseDTO> getRequest(@RequestBody OrderRequestDTO orderRequestDTO) throws Exception {
         CreateOrderResponseDTO response =  this.orderService.createOrder(orderRequestDTO) ;
+
+        return ResponseEntity.ok(response) ;
+    }
+
+    @GetMapping("/confirm-payment/{id}")
+    public ResponseEntity<CreateOrderResponseDTO> confirmPayment(@PathVariable Long id) throws Exception {
+        CreateOrderResponseDTO response = this.orderService.confirmPayment(id);
 
         return ResponseEntity.ok(response) ;
     }

@@ -19,6 +19,6 @@ public class OrderEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status ;
 
-    @OneToMany(mappedBy = "orderEntity")
+    @OneToMany(mappedBy = "orderEntity" , cascade = CascadeType.ALL)
     private List<OrderItemEntity> items ;
 }

@@ -1,14 +1,11 @@
 package com.example.ecommerceSpringOrderService.services;
 
 import com.example.ecommerceSpringOrderService.clients.ProductServiceClient;
-import com.example.ecommerceSpringOrderService.dtos.CreateOrderResponseDTO;
-import com.example.ecommerceSpringOrderService.dtos.OrderItemDTO;
-import com.example.ecommerceSpringOrderService.dtos.OrderRequestDTO;
-import com.example.ecommerceSpringOrderService.dtos.ProductDTO;
+import com.example.ecommerceSpringOrderService.dtos.*;
 import com.example.ecommerceSpringOrderService.entity.OrderEntity;
 import com.example.ecommerceSpringOrderService.entity.OrderItemEntity;
+import com.example.ecommerceSpringOrderService.enums.OrderStatus;
 import com.example.ecommerceSpringOrderService.mappers.OrderMapper;
-import com.example.ecommerceSpringOrderService.repository.OrderItemsRepository;
 import com.example.ecommerceSpringOrderService.repository.OrderRepository;
 import org.springframework.stereotype.Service;
 
@@ -17,15 +14,12 @@ import java.util.List;
 
 @Service
 public class OrderService implements IOrderService {
-    private final OrderItemsRepository orderItemsRepository ;
     private final OrderRepository orderRepository ;
     private final ProductServiceClient productServiceClient ;
 
     public OrderService(OrderRepository orderRepository ,
-                        OrderItemsRepository orderItemsRepository ,
                         ProductServiceClient productServiceClient
     ){
-        this.orderItemsRepository = orderItemsRepository ;
         this.orderRepository = orderRepository ;
         this.productServiceClient = productServiceClient ;
     }
@@ -34,6 +28,7 @@ public class OrderService implements IOrderService {
     public CreateOrderResponseDTO createOrder(OrderRequestDTO requestDTO) throws Exception {
         OrderEntity order = this.orderRepository.save(OrderMapper.toOrderEntity(requestDTO)) ;
 
+        List<OrderItemEntity> items = new ArrayList<>() ;
         for(OrderItemDTO item : requestDTO.getItems()){
             ProductDTO product = this.productServiceClient.getProductbyId(item.getProductId()) ;
             double unitPrice = product.getPrice() ;
@@ -47,8 +42,25 @@ public class OrderService implements IOrderService {
                     .product_id(item.getProductId())
                     .build();
 
-            this.orderItemsRepository.save(orderItemEntity) ;
+            items.add(orderItemEntity) ;
         }
-        return OrderMapper.toCreateOrderResponseDTO(order) ;
+        order.setItems(items);
+        OrderEntity createdOrder = this.orderRepository.save(order) ;
+        return OrderMapper.toCreateOrderResponseDTO(createdOrder) ;
+    }
+
+    @Override
+    public CreateOrderResponseDTO confirmPayment(Long id) throws Exception {
+        OrderEntity orderEntity = this.orderRepository.findById(id)
+                .orElseThrow(() -> new Exception("Invalid Order-Id")) ;
+
+        if(orderEntity.getStatus() == OrderStatus.CANCELLED || orderEntity.getStatus() == OrderStatus.SUCCESS){
+            throw new Exception("Order either is cancelled or confirmed") ;
+        }
+
+        orderEntity.setStatus(OrderStatus.SUCCESS);
+        orderEntity = this.orderRepository.save(orderEntity) ;
+
+        return OrderMapper.toCreateOrderResponseDTO(orderEntity) ;
     }
 }
